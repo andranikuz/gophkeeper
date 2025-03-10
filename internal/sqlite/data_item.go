@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"database/sql"
-	"encoding/json"
 	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"time"
 
@@ -21,8 +20,8 @@ func NewDataItemRepository(db *sql.DB) (*DataItemRepository, error) {
 	CREATE TABLE IF NOT EXISTS data_items (
 		id TEXT PRIMARY KEY,
 		type INTEGER,
-		content BLOB,
-		metadata TEXT,
+		content text,
+		user_id text,
 		updated_at DATETIME
 	);
 	`
@@ -34,24 +33,6 @@ func NewDataItemRepository(db *sql.DB) (*DataItemRepository, error) {
 	return &DataItemRepository{db: db}, nil
 }
 
-// SaveItem сохраняет (или обновляет) один объект DataItem.
-func (s *DataItemRepository) SaveItem(item entity.DataItem) error {
-	// Сериализуем метаданные как JSON.
-	meta, err := json.Marshal(item.Metadata)
-	if err != nil {
-		return err
-	}
-	query := `
-	INSERT OR REPLACE INTO data_items (id, type, content, metadata, updated_at)
-	VALUES (?, ?, ?, ?, ?);
-	`
-	_, err = s.db.Exec(query, item.ID, int(item.Type), item.Content, string(meta), item.UpdatedAt.Format(time.RFC3339))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // SaveItems сохраняет срез DataItem атомарно (в транзакции).
 func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 	tx, err := s.db.Begin()
@@ -59,7 +40,7 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 		return err
 	}
 	stmt, err := tx.Prepare(`
-	INSERT OR REPLACE INTO data_items (id, type, content, metadata, updated_at)
+	INSERT OR REPLACE INTO data_items (id, type, content, user_id, updated_at)
 	VALUES (?, ?, ?, ?, ?);
 	`)
 	if err != nil {
@@ -69,12 +50,7 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 	defer stmt.Close()
 
 	for _, item := range items {
-		meta, err := json.Marshal(item.Metadata)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-		_, err = stmt.Exec(item.ID, int(item.Type), item.Content, string(meta), item.UpdatedAt.Format(time.RFC3339))
+		_, err = stmt.Exec(item.ID, int(item.Type), item.Content, item.UserID, item.UpdatedAt.Format(time.RFC3339))
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -83,12 +59,14 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 	return tx.Commit()
 }
 
-// GetAllItems извлекает все объекты DataItem из базы.
-func (s *DataItemRepository) GetAllItems() ([]entity.DataItem, error) {
+// GetUserItems извлекает все объекты пользователя DataItem из базы.
+func (s *DataItemRepository) GetUserItems(userID string) ([]entity.DataItem, error) {
 	query := `
-	SELECT id, type, content, metadata, updated_at FROM data_items;
+	SELECT id, type, content, user_id, updated_at 
+	FROM data_items
+	WHERE user_id = ?;
 	`
-	rows, err := s.db.Query(query)
+	rows, err := s.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,18 +75,13 @@ func (s *DataItemRepository) GetAllItems() ([]entity.DataItem, error) {
 	var items []entity.DataItem
 	for rows.Next() {
 		var item entity.DataItem
-		var metaStr string
 		var updatedAtStr string
 		var typeInt int
-		err := rows.Scan(&item.ID, &typeInt, &item.Content, &metaStr, &updatedAtStr)
+		err := rows.Scan(&item.ID, &typeInt, &item.Content, &item.UserID, &updatedAtStr)
 		if err != nil {
 			return nil, err
 		}
 		item.Type = entity.DataType(typeInt)
-		// Десериализуем метаданные.
-		if err := json.Unmarshal([]byte(metaStr), &item.Metadata); err != nil {
-			return nil, err
-		}
 		t, err := time.Parse(time.RFC3339, updatedAtStr)
 		if err != nil {
 			item.UpdatedAt = time.Now()

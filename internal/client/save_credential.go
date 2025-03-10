@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"github.com/gofrs/uuid"
-	"time"
 )
 
 // CredentialDTO представляет данные для типа "credential".
@@ -24,10 +23,10 @@ func (c *Client) SaveCredential(ctx context.Context, dto CredentialDTO) error {
 	if err != nil {
 		return err
 	}
-	return c.LocalDB.SaveItem(entity.DataItem{
-		ID:        id.String(),
-		Type:      entity.DataTypeCredential,
-		Content:   payload,
-		UpdatedAt: time.Now(),
-	})
+	return c.LocalDB.SaveItem(entity.NewDataItem(
+		id.String(),
+		entity.DataTypeCredential,
+		string(payload),
+		c.Session.GetUserID(),
+	))
 }

@@ -36,35 +36,20 @@ const (
 
 // DataItem представляет единицу данных, которую можно хранить в системе.
 type DataItem struct {
-	ID        string            `json:"id"`         // Уникальный идентификатор данных (например, UUID)
-	Type      DataType          `json:"type"`       // Тип данных
-	Content   []byte            `json:"content"`    // Содержимое данных (например, зашифрованное)
-	Metadata  map[string]string `json:"metadata"`   // Дополнительная метаинформация (например, привязка к сайту, банку, аккаунту и т.д.)
-	UpdatedAt time.Time         `json:"updated_at"` // Время последнего обновления (используется для синхронизации)
+	ID        string    `json:"id"`         // Уникальный идентификатор данных (например, UUID)
+	Type      DataType  `json:"type"`       // Тип данных
+	Content   string    `json:"content"`    // Содержимое данных (например, зашифрованное)
+	UserID    string    `json:"user_id"`    // Владелец записи
+	UpdatedAt time.Time `json:"updated_at"` // Время последнего обновления (используется для синхронизации)
 }
 
 // NewDataItem создаёт новый экземпляр DataItem с заданными параметрами.
-func NewDataItem(id string, dataType DataType, content []byte, metadata map[string]string) *DataItem {
+func NewDataItem(id string, dataType DataType, content string, userID string) *DataItem {
 	return &DataItem{
 		ID:        id,
 		Type:      dataType,
 		Content:   content,
-		Metadata:  metadata,
+		UserID:    userID,
 		UpdatedAt: time.Now(),
 	}
-}
-
-// UpdateContent обновляет содержимое DataItem и обновляет временную метку.
-func (d *DataItem) UpdateContent(newContent []byte) {
-	d.Content = newContent
-	d.UpdatedAt = time.Now()
-}
-
-// AddOrUpdateMetadata добавляет или обновляет запись в метаданных DataItem.
-func (d *DataItem) AddOrUpdateMetadata(key, value string) {
-	if d.Metadata == nil {
-		d.Metadata = make(map[string]string)
-	}
-	d.Metadata[key] = value
-	d.UpdatedAt = time.Now()
 }

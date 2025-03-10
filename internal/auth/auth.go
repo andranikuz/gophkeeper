@@ -3,8 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -99,30 +97,11 @@ func (a *Authenticator) ValidateToken(tokenStr string) (*Claims, error) {
 	return claims, nil
 }
 
-// Middleware возвращает middleware для проверки JWT-токена.
-// secret — секрет для проверки подписи JWT.
-func (a *Authenticator) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-				return
-			}
-			parts := strings.Split(authHeader, " ")
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-				return
-			}
-			tokenStr := parts[1]
-			claims, err := a.ValidateToken(tokenStr)
-			if err != nil {
-				http.Error(w, "Invalid token", http.StatusUnauthorized)
-				return
-			}
-			ctx := context.WithValue(r.Context(), ContextKeyUserID, claims.UserID)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
-		})
+// GetUserIdFromCtx возвращает userID из контекста.
+func (a *Authenticator) GetUserIdFromCtx(ctx context.Context) (string, error) {
+	userID, ok := ctx.Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
+		return "", errors.New("userID not found in context")
 	}
+	return userID, nil
 }

@@ -33,12 +33,6 @@ func (h *Handler) RegisterRoutes() chi.Router {
 	// Публичные маршруты.
 	r.Post("/register", h.Register)
 	r.Post("/login", h.Login)
-
-	// Защищенные маршруты.
-	r.Group(func(r chi.Router) {
-		r.Use(h.Authenticator.Middleware())
-		r.Post("/sync", h.Sync)
-	})
 	logger.InfoLogger.Println("Routes registered successfully")
 
 	return r

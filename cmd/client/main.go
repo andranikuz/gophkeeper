@@ -14,7 +14,7 @@ import (
 
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  client -server=<server_url> -db=<local_db_path> <command> [options]")
+	fmt.Println("  client -server=<server_url> -grpc-server=<grpc-server_url> -db=<local_db_path> <command> [options]")
 	fmt.Println("Commands:")
 	fmt.Println("  register             -username=<username> -password=<password>")
 	fmt.Println("  login                -username=<username> -password=<password>")
@@ -28,7 +28,8 @@ func printUsage() {
 
 func main() {
 	serverURL := flag.String("server", "http://127.0.0.1:8080", "Server URL")
-	dbPath := flag.String("db", "client.db", "Path to local BoltDB file")
+	grpcServerURL := flag.String("grpc-server", "127.0.0.1:50051", "grpc server URL")
+	dbPath := flag.String("db", "data/client.db", "Path to local BoltDB file")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		printUsage()
@@ -47,7 +48,7 @@ func main() {
 	}
 	defer localDB.Close()
 
-	cli := client.NewClient(*serverURL, auth.NewSession(), localDB)
+	cli := client.NewClient(*serverURL, *grpcServerURL, auth.NewSession(), localDB)
 
 	switch command {
 	case "register":
@@ -56,7 +57,7 @@ func main() {
 		login(ctx, cli, flag.Args()[1:])
 	default:
 		// Для остальных проверяем наличие сессии.
-		if cli.Session.GetSessionToken() == "" {
+		if cli.Session.GetUserID() == "" {
 			fmt.Println("No session found, please login first.")
 			os.Exit(1)
 		}
@@ -75,6 +76,8 @@ func main() {
 		saveFile(ctx, cli, flag.Args()[1:])
 	case "sync":
 		sync(ctx, cli, flag.Args()[1:])
+	case "delete":
+		delete(ctx, cli, flag.Args()[1:])
 	default:
 		if command != "register" && command != "login" {
 			fmt.Println("Unknown command:", command)
@@ -253,8 +256,26 @@ func getItems(ctx context.Context, cli *client.Client, args []string) {
 	}
 }
 
+func delete(ctx context.Context, cli *client.Client, args []string) {
+	cmd := flag.NewFlagSet("delete", flag.ExitOnError)
+	id := cmd.String("id", "", "item id")
+	if err := cmd.Parse(args); err != nil {
+		fmt.Println("Failed to parse arguments")
+		os.Exit(1)
+	}
+	if *id == "" {
+		fmt.Println("id must be provided")
+		os.Exit(1)
+	}
+	if err := cli.DeleteItem(ctx, *id); err != nil {
+		fmt.Println("Delete error:", err)
+		os.Exit(1)
+	}
+	fmt.Println("Item deleted")
+}
+
 func sync(ctx context.Context, cli *client.Client, args []string) {
-	if err := cli.Sync(ctx); err != nil {
+	if err := cli.SyncGRPC(ctx); err != nil {
 		fmt.Println("Sync error:", err)
 		os.Exit(1)
 	}

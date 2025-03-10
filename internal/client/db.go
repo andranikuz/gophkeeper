@@ -60,7 +60,7 @@ func (ls *BboltStorage) SaveItems(items []entity.DataItem) error {
 }
 
 // SaveItem сохраняет объект storage.DataItem в бакете.
-func (ls *BboltStorage) SaveItem(item entity.DataItem) error {
+func (ls *BboltStorage) SaveItem(item *entity.DataItem) error {
 	return ls.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
@@ -95,4 +95,38 @@ func (ls *BboltStorage) GetAllItems() ([]entity.DataItem, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+// DeleteItem удаляет элемент из локального хранилища по его ID.
+func (ls *BboltStorage) DeleteItem(id string) error {
+	return ls.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return fmt.Errorf("bucket %s not found", bucketName)
+		}
+		return bucket.Delete([]byte(id))
+	})
+}
+
+// GetByID извлекает один объект entity.DataItem из локального хранилища по его ID.
+func (ls *BboltStorage) GetByID(id string) (*entity.DataItem, error) {
+	var item *entity.DataItem
+	err := ls.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return fmt.Errorf("bucket %s not found", bucketName)
+		}
+		data := bucket.Get([]byte(id))
+		if data == nil {
+			return fmt.Errorf("item with id %s not found", id)
+		}
+		if err := json.Unmarshal(data, &item); err != nil {
+			return fmt.Errorf("failed to unmarshal item: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
 }

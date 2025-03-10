@@ -3,10 +3,17 @@ package server
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/andranikuz/gophkeeper/internal/auth"
 	"github.com/andranikuz/gophkeeper/internal/config"
+	pb "github.com/andranikuz/gophkeeper/internal/filesync"
+	"github.com/andranikuz/gophkeeper/internal/grpcserver"
 	"github.com/andranikuz/gophkeeper/internal/handlers"
 	"github.com/andranikuz/gophkeeper/internal/sqlite"
+	"github.com/andranikuz/gophkeeper/pkg/logger"
+	"google.golang.org/grpc"
+	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,9 +21,10 @@ import (
 
 // Server реализует сервер.
 type Server struct {
-	handler *handlers.Handler
-	cfg     config.Config
-	ctx     context.Context
+	handler    *handlers.Handler
+	grpcServer *grpc.Server
+	cfg        *config.Config
+	ctx        context.Context
 }
 
 // NewServer создаёт новый экземпляр Server.
@@ -41,18 +49,47 @@ func NewServer(ctx context.Context) (*Server, error) {
 	authManager := auth.NewAuthenticator(cfg.TokenSecret, cfg.TokenExpiration)
 	// Инициализируем http хендлеры.
 	handler := handlers.NewHandler(dataItemRepo, userRepo, authManager)
+	// Создаем gRPC сервер с интерсепторами авторизации.
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(grpcserver.JwtUnaryInterceptor(authManager)),
+		grpc.StreamInterceptor(grpcserver.JwtStreamInterceptor(authManager)),
+	)
+	fileSyncSvc := grpcserver.NewFileSyncServiceServer("./data/server_files", dataItemRepo, authManager)
+	pb.RegisterFileSyncServiceServer(grpcServer, fileSyncSvc)
 
 	return &Server{
-		ctx:     ctx,
-		handler: handler,
+		ctx:        ctx,
+		cfg:        cfg,
+		handler:    handler,
+		grpcServer: grpcServer,
 	}, nil
 }
 
 func (s Server) Run() error {
-	return http.ListenAndServe(s.cfg.Host+`:`+strconv.Itoa(s.cfg.Port), s.handler.RegisterRoutes())
+	// Формируем адрес для HTTP-сервера.
+	httpAddr := s.cfg.Host + ":" + strconv.Itoa(s.cfg.Port)
+	// Запускаем HTTP-сервер в горутине.
+	go func() {
+		logger.InfoLogger.Printf("HTTP server started on %s", httpAddr)
+		if err := http.ListenAndServe(httpAddr, s.handler.RegisterRoutes()); err != nil {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	// Формируем адрес для gRPC-сервера.
+	grpcAddr := s.cfg.Host + ":" + strconv.Itoa(s.cfg.GrpcPort)
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		return fmt.Errorf("listener error: %w", err)
+	}
+	logger.InfoLogger.Printf("gRPC server started on %s", grpcAddr)
+	if err := s.grpcServer.Serve(lis); err != nil {
+		return fmt.Errorf("gRPC server error: %w", err)
+	}
+	return nil
 }
 
-// InitDB открывает базу SQLite по заданному пути и инициализирует схему.
+// InitDB открывает базу SQLite по заданному пути.
 func InitDB(path string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {

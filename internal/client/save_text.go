@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"github.com/gofrs/uuid"
-	"time"
 )
 
 // TextDTO представляет данные для типа "text".
@@ -18,11 +17,10 @@ func (c *Client) SaveText(ctx context.Context, dto TextDTO) error {
 	if err != nil {
 		return err
 	}
-	dataItem := entity.DataItem{
-		ID:        id.String(),
-		Type:      entity.DataTypeText,
-		Content:   []byte(dto.Text),
-		UpdatedAt: time.Now(),
-	}
-	return c.LocalDB.SaveItem(dataItem)
+	return c.LocalDB.SaveItem(entity.NewDataItem(
+		id.String(),
+		entity.DataTypeText,
+		dto.Text,
+		c.Session.GetUserID(),
+	))
 }

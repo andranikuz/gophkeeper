@@ -75,10 +75,10 @@ func (c *Client) SaveCard(ctx context.Context, dto CardDTO) error {
 	if err != nil {
 		return err
 	}
-	return c.LocalDB.SaveItem(entity.DataItem{
-		ID:        id.String(),
-		Type:      entity.DataTypeCredential,
-		Content:   payload,
-		UpdatedAt: time.Now(),
-	})
+	return c.LocalDB.SaveItem(entity.NewDataItem(
+		id.String(),
+		entity.DataTypeCard,
+		string(payload),
+		c.Session.GetUserID(),
+	))
 }

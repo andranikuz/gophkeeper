@@ -8,8 +8,9 @@ import (
 // Config содержит настройки приложения.
 type Config struct {
 	// Server settings
-	Host string // Адрес сервера
-	Port int    // Порт сервера
+	Host     string // Адрес сервера
+	Port     int    // Порт сервера
+	GrpcPort int    // Порт grpc сервера
 
 	// Storage settings
 	DBPath string // Путь к файлу базы данных
@@ -28,6 +29,7 @@ func LoadConfig() *Config {
 
 	flag.StringVar(&cfg.Host, "host", "127.0.0.1", "Серверный адрес")
 	flag.IntVar(&cfg.Port, "port", 8080, "Серверный порт")
+	flag.IntVar(&cfg.GrpcPort, "grpc-port", 50051, "Порт grpc сервера")
 	flag.StringVar(&cfg.DBPath, "db", "./data/gophkeeper.db", "Путь к файлу базы данных")
 	flag.StringVar(&cfg.Mode, "mode", "server", "Режим работы приложения: server или client")
 	flag.StringVar(&cfg.TokenSecret, "secret", "mysecret", "Секретный ключ для генерации токенов")

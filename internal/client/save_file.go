@@ -7,8 +7,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 )
+
+const DestDir = "./data/client_files"
 
 // FileDTO представляет данные для отправки файла.
 type FileDTO struct {
@@ -23,20 +24,10 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 	if err != nil {
 		return err
 	}
-
-	// Определяем расширение исходного файла.
-	ext := filepath.Ext(dto.FilePath)
-
-	// Директория для хранения скопированных файлов.
-	destDir := "./data/client_files"
 	// Создаем директорию, если ее не существует.
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(DestDir, 0755); err != nil {
 		return err
 	}
-
-	// Формируем новый путь для копирования: destDir + "/" + id + ext.
-	destPath := filepath.Join(destDir, id.String()+ext)
-
 	// Открываем исходный файл.
 	srcFile, err := os.Open(dto.FilePath)
 	if err != nil {
@@ -44,8 +35,17 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 	}
 	defer srcFile.Close()
 
+	// Получаем базовое имя исходного файла (без пути).
+	baseName := filepath.Base(dto.FilePath)
+	item := entity.NewDataItem(
+		id.String(),
+		entity.DataTypeBinary,
+		baseName,
+		c.Session.GetUserID(),
+	)
+
 	// Создаем новый файл в директории назначения.
-	dstFile, err := os.Create(destPath)
+	dstFile, err := os.Create(GetLocalFilePath(item))
 	if err != nil {
 		return err
 	}
@@ -56,16 +56,11 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 		return err
 	}
 
-	// Получаем базовое имя исходного файла (без пути).
-	baseName := filepath.Base(dto.FilePath)
+	return c.LocalDB.SaveItem(item)
+}
 
-	// Создаем объект DataItem, в котором в Content записано только базовое имя исходного файла.
-	dataItem := entity.DataItem{
-		ID:        id.String(),
-		Type:      entity.DataTypeBinary,
-		Content:   []byte(baseName),
-		UpdatedAt: time.Now(),
-	}
-
-	return c.LocalDB.SaveItem(dataItem)
+func GetLocalFilePath(item *entity.DataItem) string {
+	// Определяем расширение файла.
+	ext := filepath.Ext(item.Content)
+	return DestDir + `/` + item.ID + ext
 }

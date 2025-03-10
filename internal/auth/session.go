@@ -2,53 +2,58 @@ package auth
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
-const sessionFile = "session.json"
+const sessionFile = "data/session.json"
 
-// Token хранит JWT-токен.
+// Token хранит JWT-токен и идентификатор пользователя.
 type Token struct {
-	Token string `json:"token"`
+	Token  string `json:"token"`
+	UserID string `json:"user_id"`
 }
 
 // Session управляет сессией пользователя.
 type Session struct {
-	token Token
+	Token Token
 }
 
+// NewSession создаёт новую сессию, пытаясь прочитать токен из файла.
+// Если файла нет, возвращается сессия с пустым токеном.
 func NewSession() *Session {
-	return &Session{
-		token: Token{
-			Token: ReadSession(),
-		},
-	}
+	return &Session{Token: readToken()}
 }
 
-// SaveSession сохраняет токен в файл.
-func (s *Session) SaveSession(token string) error {
-	sess := Token{Token: token}
-	data, err := json.Marshal(sess)
+// Save сохраняет переданный токен в сессию и записывает его в файл.
+func (s *Session) Save(token Token) error {
+	s.Token = token
+	data, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(sessionFile, data, 0644)
+	return os.WriteFile(sessionFile, data, 0644)
 }
 
-// GetSessionToken возвращает токен сессии.
+// GetSessionToken возвращает строку токена сессии.
 func (s *Session) GetSessionToken() string {
-	return s.token.Token
+	return s.Token.Token
 }
 
-// ReadSession считывает токен из файла.
-func ReadSession() string {
-	data, err := ioutil.ReadFile(sessionFile)
+// GetUserID возвращает userID из сессии.
+func (s *Session) GetUserID() string {
+	return s.Token.UserID
+}
+
+// readToken считывает токен из файла и возвращает его.
+// Если чтение или парсинг не удался, возвращается пустой Token.
+func readToken() Token {
+	data, err := os.ReadFile(sessionFile)
 	if err != nil {
-		return ""
+		return Token{}
 	}
 	var token Token
 	if err := json.Unmarshal(data, &token); err != nil {
-		return ""
+		return Token{}
 	}
-	return token.Token
+	return token
 }
