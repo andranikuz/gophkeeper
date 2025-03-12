@@ -1,24 +1,25 @@
 package handlers
 
 import (
-	"github.com/andranikuz/gophkeeper/internal/auth"
-	"github.com/andranikuz/gophkeeper/internal/sqlite"
 	"github.com/andranikuz/gophkeeper/pkg/logger"
+	"github.com/andranikuz/gophkeeper/pkg/repository"
+	"github.com/andranikuz/gophkeeper/pkg/services"
+
 	"github.com/go-chi/chi/v5"
 )
 
 // Handler инкапсулирует хранилище данных и настройки авторизации.
 type Handler struct {
-	DataItemRepo  *sqlite.DataItemRepository
-	UserRepo      *sqlite.UserRepository
-	Authenticator *auth.Authenticator
+	DataItemRepo  repository.DataItemRepository
+	UserRepo      repository.UserRepository
+	Authenticator services.AuthenticatorInterface
 }
 
 // NewHandler создаёт новый Handler.
 func NewHandler(
-	dataItemRepo *sqlite.DataItemRepository,
-	userRepo *sqlite.UserRepository,
-	authenticator *auth.Authenticator,
+	dataItemRepo repository.DataItemRepository,
+	userRepo repository.UserRepository,
+	authenticator services.AuthenticatorInterface,
 ) *Handler {
 	return &Handler{
 		DataItemRepo:  dataItemRepo,

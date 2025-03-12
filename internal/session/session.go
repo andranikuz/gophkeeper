@@ -1,31 +1,30 @@
-package auth
+package session
 
 import (
 	"encoding/json"
 	"os"
+
+	"github.com/andranikuz/gophkeeper/internal/client"
 )
+
+// BboltStorage must implements LocalStorage interface
+var _ client.SessionService = &Session{}
 
 const sessionFile = "data/session.json"
 
-// Token хранит JWT-токен и идентификатор пользователя.
-type Token struct {
-	Token  string `json:"token"`
-	UserID string `json:"user_id"`
-}
-
 // Session управляет сессией пользователя.
 type Session struct {
-	Token Token
+	Token client.Token
 }
 
 // NewSession создаёт новую сессию, пытаясь прочитать токен из файла.
 // Если файла нет, возвращается сессия с пустым токеном.
-func NewSession() *Session {
-	return &Session{Token: readToken()}
+func NewSession() Session {
+	return Session{Token: readToken()}
 }
 
 // Save сохраняет переданный токен в сессию и записывает его в файл.
-func (s *Session) Save(token Token) error {
+func (s Session) Save(token client.Token) error {
 	s.Token = token
 	data, err := json.Marshal(token)
 	if err != nil {
@@ -35,25 +34,25 @@ func (s *Session) Save(token Token) error {
 }
 
 // GetSessionToken возвращает строку токена сессии.
-func (s *Session) GetSessionToken() string {
+func (s Session) GetSessionToken() string {
 	return s.Token.Token
 }
 
 // GetUserID возвращает userID из сессии.
-func (s *Session) GetUserID() string {
+func (s Session) GetUserID() string {
 	return s.Token.UserID
 }
 
 // readToken считывает токен из файла и возвращает его.
 // Если чтение или парсинг не удался, возвращается пустой Token.
-func readToken() Token {
+func readToken() client.Token {
 	data, err := os.ReadFile(sessionFile)
 	if err != nil {
-		return Token{}
+		return client.Token{}
 	}
-	var token Token
+	var token client.Token
 	if err := json.Unmarshal(data, &token); err != nil {
-		return Token{}
+		return client.Token{}
 	}
 	return token
 }

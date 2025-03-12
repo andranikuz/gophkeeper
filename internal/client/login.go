@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/andranikuz/gophkeeper/internal/auth"
 	"io"
 	"net/http"
 	"time"
@@ -64,7 +63,7 @@ func (c *Client) Login(ctx context.Context, dto LoginDTO) error {
 
 	// Сохраняем токен и userID в сессии.
 	// Метод SaveSession принимает объект типа Token (с полями Token и UserID).
-	if err := c.Session.Save(auth.Token{
+	if err := c.Session.Save(Token{
 		Token:  token,
 		UserID: userID,
 	}); err != nil {

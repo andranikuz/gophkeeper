@@ -2,10 +2,11 @@ package sqlite
 
 import (
 	"database/sql"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
 )
 
 // DataItemRepository реализует хранилище данных с использованием SQLite.

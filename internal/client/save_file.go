@@ -2,14 +2,15 @@ package client
 
 import (
 	"context"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
-	"github.com/gofrs/uuid"
 	"io"
 	"os"
 	"path/filepath"
-)
 
-const DestDir = "./data/client_files"
+	"github.com/gofrs/uuid"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
+	"github.com/andranikuz/gophkeeper/pkg/utils"
+)
 
 // FileDTO представляет данные для отправки файла.
 type FileDTO struct {
@@ -25,7 +26,7 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 		return err
 	}
 	// Создаем директорию, если ее не существует.
-	if err := os.MkdirAll(DestDir, 0755); err != nil {
+	if err := os.MkdirAll(utils.ClientDestDir, 0755); err != nil {
 		return err
 	}
 	// Открываем исходный файл.
@@ -45,7 +46,7 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 	)
 
 	// Создаем новый файл в директории назначения.
-	dstFile, err := os.Create(GetLocalFilePath(item))
+	dstFile, err := os.Create(utils.GetLocalFilePath(item))
 	if err != nil {
 		return err
 	}
@@ -57,10 +58,4 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 	}
 
 	return c.LocalDB.SaveItem(item)
-}
-
-func GetLocalFilePath(item *entity.DataItem) string {
-	// Определяем расширение файла.
-	ext := filepath.Ext(item.Content)
-	return DestDir + `/` + item.ID + ext
 }

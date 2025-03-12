@@ -3,8 +3,10 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
+
 	"github.com/gofrs/uuid"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
 )
 
 // CredentialDTO представляет данные для типа "credential".

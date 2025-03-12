@@ -1,12 +1,13 @@
-package client
+package bbolt
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
 )
 
 const bucketName = "data"
@@ -17,10 +18,10 @@ type BboltStorage struct {
 }
 
 // OpenLocalStorage открывает (или создаёт) базу BoltDB по указанному пути.
-func OpenLocalStorage(path string) (*BboltStorage, error) {
+func OpenLocalStorage(path string) (BboltStorage, error) {
 	db, err := bolt.Open(path, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		return nil, err
+		return BboltStorage{}, err
 	}
 	// Создаём бакет, если он отсутствует.
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -29,9 +30,9 @@ func OpenLocalStorage(path string) (*BboltStorage, error) {
 	})
 	if err != nil {
 		db.Close()
-		return nil, err
+		return BboltStorage{}, err
 	}
-	return &BboltStorage{db: db}, nil
+	return BboltStorage{db: db}, nil
 }
 
 // Close закрывает базу.
@@ -40,7 +41,7 @@ func (ls *BboltStorage) Close() error {
 }
 
 // SaveItems сохраняет объект storage.DataItem в бакете.
-func (ls *BboltStorage) SaveItems(items []entity.DataItem) error {
+func (ls BboltStorage) SaveItems(items []entity.DataItem) error {
 	return ls.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
@@ -60,7 +61,7 @@ func (ls *BboltStorage) SaveItems(items []entity.DataItem) error {
 }
 
 // SaveItem сохраняет объект storage.DataItem в бакете.
-func (ls *BboltStorage) SaveItem(item *entity.DataItem) error {
+func (ls BboltStorage) SaveItem(item *entity.DataItem) error {
 	return ls.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
@@ -75,7 +76,7 @@ func (ls *BboltStorage) SaveItem(item *entity.DataItem) error {
 }
 
 // GetAllItems возвращает все объекты storage.DataItem из бакета.
-func (ls *BboltStorage) GetAllItems() ([]entity.DataItem, error) {
+func (ls BboltStorage) GetAllItems() ([]entity.DataItem, error) {
 	var items []entity.DataItem
 	err := ls.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
@@ -98,7 +99,7 @@ func (ls *BboltStorage) GetAllItems() ([]entity.DataItem, error) {
 }
 
 // DeleteItem удаляет элемент из локального хранилища по его ID.
-func (ls *BboltStorage) DeleteItem(id string) error {
+func (ls BboltStorage) DeleteItem(id string) error {
 	return ls.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
@@ -109,7 +110,7 @@ func (ls *BboltStorage) DeleteItem(id string) error {
 }
 
 // GetByID извлекает один объект entity.DataItem из локального хранилища по его ID.
-func (ls *BboltStorage) GetByID(id string) (*entity.DataItem, error) {
+func (ls BboltStorage) GetByID(id string) (*entity.DataItem, error) {
 	var item *entity.DataItem
 	err := ls.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))

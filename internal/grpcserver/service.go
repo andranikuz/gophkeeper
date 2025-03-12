@@ -1,26 +1,26 @@
 package grpcserver
 
 import (
-	"github.com/andranikuz/gophkeeper/internal/auth"
 	pb "github.com/andranikuz/gophkeeper/internal/filesync"
-	"github.com/andranikuz/gophkeeper/internal/sqlite"
 	"github.com/andranikuz/gophkeeper/pkg/logger"
+	"github.com/andranikuz/gophkeeper/pkg/repository"
+	"github.com/andranikuz/gophkeeper/pkg/services"
 	"os"
 )
 
 // fileSyncServiceServer реализует pb.FileSyncServiceServer.
 type fileSyncServiceServer struct {
 	pb.UnimplementedFileSyncServiceServer
-	uploadDir          string                     // Директория для хранения файлов
-	dataItemRepository *sqlite.DataItemRepository // Репозиторий data_item
-	authenticator      *auth.Authenticator        // Сервис авторизации
+	uploadDir          string                          // Директория для хранения файлов
+	dataItemRepository repository.DataItemRepository   // Репозиторий data_item
+	authenticator      services.AuthenticatorInterface // Сервис авторизации
 }
 
 // NewFileSyncServiceServer создаёт новый экземпляр сервиса.
 func NewFileSyncServiceServer(
 	uploadDir string,
-	dataItemRepository *sqlite.DataItemRepository,
-	authenticator *auth.Authenticator,
+	dataItemRepository repository.DataItemRepository,
+	authenticator services.AuthenticatorInterface,
 ) pb.FileSyncServiceServer {
 	// Создаем директорию для загрузок, если её нет.
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {

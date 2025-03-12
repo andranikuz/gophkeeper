@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/andranikuz/gophkeeper/pkg/services"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,18 +45,11 @@ func (a *Authenticator) CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// Claims определяет структуру данных, содержащую информацию о пользователе для JWT.
-type Claims struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
-
 // GenerateToken генерирует JWT-токен для пользователя с указанным идентификатором и именем.
 // Токен подписывается секретным ключом и имеет ограниченный срок действия.
 func (a *Authenticator) GenerateToken(userID string, username string) (string, error) {
 	expirationTime := time.Now().Add(a.tokenExpiration)
-	claims := &Claims{
+	claims := &services.Claims{
 		UserID:   userID,
 		Username: username,
 		StandardClaims: jwt.StandardClaims{
@@ -75,8 +69,8 @@ func (a *Authenticator) GenerateToken(userID string, username string) (string, e
 
 // ValidateToken проверяет валидность переданного JWT-токена.
 // Если токен корректен, возвращаются данные из claims, иначе — ошибка.
-func (a *Authenticator) ValidateToken(tokenStr string) (*Claims, error) {
-	claims := &Claims{}
+func (a *Authenticator) ValidateToken(tokenStr string) (*services.Claims, error) {
+	claims := &services.Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 		// Проверяем, что метод подписи является HMAC

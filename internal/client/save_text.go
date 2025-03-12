@@ -2,8 +2,10 @@ package client
 
 import (
 	"context"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
+
 	"github.com/gofrs/uuid"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
 )
 
 // TextDTO представляет данные для типа "text".

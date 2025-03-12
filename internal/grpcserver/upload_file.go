@@ -2,11 +2,12 @@ package grpcserver
 
 import (
 	"fmt"
-	pb "github.com/andranikuz/gophkeeper/internal/filesync"
-	"github.com/andranikuz/gophkeeper/pkg/logger"
 	"io"
 	"os"
 	"path/filepath"
+
+	pb "github.com/andranikuz/gophkeeper/internal/filesync"
+	"github.com/andranikuz/gophkeeper/pkg/logger"
 )
 
 // UploadFile принимает поток чанков файла от клиента и сохраняет файл.

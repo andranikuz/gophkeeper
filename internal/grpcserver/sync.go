@@ -2,12 +2,12 @@ package grpcserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"time"
+
 	pb "github.com/andranikuz/gophkeeper/internal/filesync"
 	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"github.com/andranikuz/gophkeeper/pkg/logger"
-	"time"
 )
 
 // SyncRecords принимает от клиента массив записей, объединяет их с данными из хранилища,
@@ -97,8 +97,6 @@ func computeSyncLists(clientItems, serverItems []entity.DataItem) (uploadList, d
 func protoToDataItems(pbItems []*pb.DataItem, userID string) []entity.DataItem {
 	var items []entity.DataItem
 	for _, pbItem := range pbItems {
-		var metadata map[string]string
-		_ = json.Unmarshal([]byte(pbItem.Metadata), &metadata)
 		t, _ := time.Parse(time.RFC3339, pbItem.UpdatedAt)
 		items = append(items, entity.DataItem{
 			ID:        pbItem.Id,

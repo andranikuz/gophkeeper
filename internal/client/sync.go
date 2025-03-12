@@ -2,17 +2,18 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/metadata"
 	"io"
 	"os"
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	pb "github.com/andranikuz/gophkeeper/internal/filesync"
 	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"github.com/andranikuz/gophkeeper/pkg/logger"
+	"github.com/andranikuz/gophkeeper/pkg/utils"
 )
 
 // SyncGRPC выполняет синхронизацию метаданных и файлов с сервером через gRPC.
@@ -52,7 +53,7 @@ func (c *Client) SyncGRPC(ctx context.Context) error {
 			go func(fileID string) {
 				defer wg.Done()
 				// Получаем локальный путь к файлу по его ID
-				localFilePath := GetLocalFilePath(&item)
+				localFilePath := utils.GetLocalFilePath(&item)
 				if err := c.uploadFileGRPC(ctx, fileID, localFilePath); err != nil {
 					logger.ErrorLogger.Printf("Error uploading file %s: %v", fileID, err)
 				} else {
@@ -135,7 +136,7 @@ func (c *Client) downloadFileGRPC(ctx context.Context, item entity.DataItem) (st
 	}
 
 	// Определяем локальный путь для сохранения файла.
-	localFilePath := GetLocalFilePath(&item)
+	localFilePath := utils.GetLocalFilePath(&item)
 	f, err := os.Create(localFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file %s: %w", localFilePath, err)
@@ -175,8 +176,6 @@ func dataItemsToProto(items []entity.DataItem) []*pb.DataItem {
 func protoToDataItems(pbItems []*pb.DataItem) []entity.DataItem {
 	var items []entity.DataItem
 	for _, pbItem := range pbItems {
-		var metadata map[string]string
-		_ = json.Unmarshal([]byte(pbItem.Metadata), &metadata)
 		t, _ := time.Parse(time.RFC3339, pbItem.UpdatedAt)
 		items = append(items, entity.DataItem{
 			ID:        pbItem.Id,

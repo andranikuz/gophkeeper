@@ -3,8 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
 	"os"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
+	"github.com/andranikuz/gophkeeper/pkg/logger"
+	"github.com/andranikuz/gophkeeper/pkg/utils"
 )
 
 // DeleteItem удаляет запись по указанному id из локального хранилища.
@@ -21,9 +24,9 @@ func (c *Client) DeleteItem(ctx context.Context, id string) error {
 	if item.Type == entity.DataTypeBinary {
 		// Предполагается, что файлы хранятся в директории, которую возвращает GetLocalFilePath.
 		// Здесь, например, мы объединяем директорию хранения и базовое имя файла.
-		filePath := GetLocalFilePath(item)
+		filePath := utils.GetLocalFilePath(item)
 		if err := os.Remove(filePath); err != nil {
-			return fmt.Errorf("failed to remove file from disk (%s): %w", filePath, err)
+			logger.ErrorLogger.Printf("failed to remove file from disk (%s): %s", filePath, err.Error())
 		}
 	}
 

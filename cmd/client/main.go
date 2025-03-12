@@ -8,8 +8,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/andranikuz/gophkeeper/internal/auth"
+	"github.com/andranikuz/gophkeeper/internal/bbolt"
 	"github.com/andranikuz/gophkeeper/internal/client"
+	"github.com/andranikuz/gophkeeper/internal/session"
 )
 
 func printUsage() {
@@ -41,14 +42,14 @@ func main() {
 	defer cancel()
 
 	// Открываем локальное хранилище BoltDB.
-	localDB, err := client.OpenLocalStorage(*dbPath)
+	localDB, err := bbolt.OpenLocalStorage(*dbPath)
 	if err != nil {
 		fmt.Println("Error opening local database:", err)
 		os.Exit(1)
 	}
 	defer localDB.Close()
 
-	cli := client.NewClient(*serverURL, *grpcServerURL, auth.NewSession(), localDB)
+	cli := client.NewClient(*serverURL, *grpcServerURL, session.NewSession(), localDB)
 
 	switch command {
 	case "register":
@@ -247,7 +248,7 @@ func getItems(ctx context.Context, cli *client.Client, args []string) {
 			item.ID,
 			item.Type.String(),
 			item.UpdatedAt.Format(time.RFC3339),
-			string(item.Content),
+			item.Content,
 		)
 	}
 	if err := w.Flush(); err != nil {

@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
-	"github.com/gofrs/uuid"
 	"regexp"
 	"time"
+
+	"github.com/gofrs/uuid"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
 )
 
 // CardDTO представляет подробные данные карты.

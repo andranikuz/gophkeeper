@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/andranikuz/gophkeeper/pkg/entity"
-	"github.com/andranikuz/gophkeeper/pkg/logger"
-	"github.com/gofrs/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
+
+	"github.com/gofrs/uuid"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/andranikuz/gophkeeper/pkg/entity"
+	"github.com/andranikuz/gophkeeper/pkg/logger"
 )
 
 // Register реализует регистрацию пользователя.

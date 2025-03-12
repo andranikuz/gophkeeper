@@ -4,6 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"strconv"
+	"time"
+
+	"google.golang.org/grpc"
+
 	"github.com/andranikuz/gophkeeper/internal/auth"
 	"github.com/andranikuz/gophkeeper/internal/config"
 	pb "github.com/andranikuz/gophkeeper/internal/filesync"
@@ -11,12 +19,6 @@ import (
 	"github.com/andranikuz/gophkeeper/internal/handlers"
 	"github.com/andranikuz/gophkeeper/internal/sqlite"
 	"github.com/andranikuz/gophkeeper/pkg/logger"
-	"google.golang.org/grpc"
-	"log"
-	"net"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 // Server реализует сервер.
