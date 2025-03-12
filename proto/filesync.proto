@@ -9,7 +9,8 @@ message DataItem {
   string id = 1;
   int32 type = 2;          // Например, 0 – credential, 1 – text, 2 – binary, 3 – card.
   string content = 3;      // Для файлов — имя или путь, для прочего — данные.
-  string updated_at = 4;   // В формате RFC3339.
+  string meta = 4;
+  string updated_at = 5;   // В формате RFC3339.
 }
 
 // Запрос для синхронизации записей (метаданных).

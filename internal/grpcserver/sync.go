@@ -102,6 +102,7 @@ func protoToDataItems(pbItems []*pb.DataItem, userID string) []entity.DataItem {
 			ID:        pbItem.Id,
 			Type:      entity.DataType(pbItem.Type),
 			Content:   pbItem.Content,
+			Meta:      pbItem.Meta,
 			UserID:    userID,
 			UpdatedAt: t,
 		})
@@ -117,6 +118,7 @@ func dataItemsToProto(items []entity.DataItem) []*pb.DataItem {
 			Id:        item.ID,
 			Type:      int32(item.Type),
 			Content:   item.Content,
+			Meta:      item.Meta,
 			UpdatedAt: item.UpdatedAt.Format(time.RFC3339),
 		})
 	}

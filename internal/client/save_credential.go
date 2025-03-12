@@ -13,6 +13,7 @@ import (
 type CredentialDTO struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
+	Meta     string `json:"meta"`
 }
 
 // SaveCredential сохраняет данные типа "credential" в локальное хранилище.
@@ -29,6 +30,7 @@ func (c *Client) SaveCredential(ctx context.Context, dto CredentialDTO) error {
 		id.String(),
 		entity.DataTypeCredential,
 		string(payload),
+		dto.Meta,
 		c.Session.GetUserID(),
 	))
 }

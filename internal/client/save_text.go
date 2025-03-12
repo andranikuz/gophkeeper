@@ -11,6 +11,7 @@ import (
 // TextDTO представляет данные для типа "text".
 type TextDTO struct {
 	Text string `json:"text"`
+	Meta string `json:"meta"`
 }
 
 // SaveText сохраняет данные типа "text" в локальное хранилище.
@@ -23,6 +24,7 @@ func (c *Client) SaveText(ctx context.Context, dto TextDTO) error {
 		id.String(),
 		entity.DataTypeText,
 		dto.Text,
+		dto.Meta,
 		c.Session.GetUserID(),
 	))
 }

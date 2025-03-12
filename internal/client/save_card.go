@@ -18,6 +18,7 @@ type CardDTO struct {
 	ExpirationDate string `json:"expiration_date"` // Формат MM/YY или MM/YYYY
 	CVV            string `json:"cvv"`
 	CardHolderName string `json:"card_holder_name"`
+	Meta           string `json:"meta"`
 }
 
 // Validate выполняет валидацию данных карты.
@@ -81,6 +82,7 @@ func (c *Client) SaveCard(ctx context.Context, dto CardDTO) error {
 		id.String(),
 		entity.DataTypeCard,
 		string(payload),
+		dto.Meta,
 		c.Session.GetUserID(),
 	))
 }

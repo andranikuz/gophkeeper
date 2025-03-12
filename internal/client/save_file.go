@@ -15,6 +15,7 @@ import (
 // FileDTO представляет данные для отправки файла.
 type FileDTO struct {
 	FilePath string `json:"file_path"`
+	Meta     string `json:"meta"`
 }
 
 // SaveFile копирует исходный файл в директорию ./data/client_files с новым именем,
@@ -42,6 +43,7 @@ func (c *Client) SaveFile(ctx context.Context, dto FileDTO) error {
 		id.String(),
 		entity.DataTypeBinary,
 		baseName,
+		dto.Meta,
 		c.Session.GetUserID(),
 	)
 

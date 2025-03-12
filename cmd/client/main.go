@@ -13,17 +13,24 @@ import (
 	"github.com/andranikuz/gophkeeper/internal/session"
 )
 
+// Version содержит номер версии. Задаётся через ldflags при сборке.
+var Version = "dev"
+
+// BuildDate содержит дату сборки. Задаётся через ldflags при сборке.
+var BuildDate = "unknown"
+
 func printUsage() {
+	fmt.Println(getVersionInfo())
 	fmt.Println("Usage:")
 	fmt.Println("  client -server=<server_url> -grpc-server=<grpc-server_url> -db=<local_db_path> <command> [options]")
 	fmt.Println("Commands:")
 	fmt.Println("  register             -username=<username> -password=<password>")
 	fmt.Println("  login                -username=<username> -password=<password>")
 	fmt.Println("  get")
-	fmt.Println("  save-credential      -login=<login> -password=<password>")
-	fmt.Println("  save-text            -text='<text>'")
-	fmt.Println("  save-card            -number=<card_number> -exp=<expiration_date> -cvv=<cvv> -holder=<card_holder_name>")
-	fmt.Println("  save-file            -file=<file_path>")
+	fmt.Println("  save-credential      -login=<login> -password=<password> -meta=<meta>")
+	fmt.Println("  save-text            -text=<text>  -meta=<meta>")
+	fmt.Println("  save-card            -number=<card_number> -exp=<expiration_date> -cvv=<cvv> -holder=<card_holder_name> -meta=<meta>")
+	fmt.Println("  save-file            -file=<file_path>  -meta=<meta>")
 	fmt.Println("  sync")
 }
 
@@ -138,6 +145,7 @@ func login(ctx context.Context, cli *client.Client, args []string) {
 func saveText(ctx context.Context, cli *client.Client, args []string) {
 	cmd := flag.NewFlagSet("save-text", flag.ExitOnError)
 	text := cmd.String("text", "", "Text content")
+	meta := cmd.String("meta", "", "Meta")
 	if err := cmd.Parse(args); err != nil {
 		fmt.Println("Failed to parse arguments")
 		os.Exit(1)
@@ -148,6 +156,7 @@ func saveText(ctx context.Context, cli *client.Client, args []string) {
 	}
 	dto := client.TextDTO{
 		Text: *text,
+		Meta: *meta,
 	}
 	if err := cli.SaveText(ctx, dto); err != nil {
 		fmt.Println("Save text error:", err)
@@ -160,6 +169,7 @@ func saveCredentials(ctx context.Context, cli *client.Client, args []string) {
 	cmd := flag.NewFlagSet("save-credential", flag.ExitOnError)
 	login := cmd.String("login", "", "Credential login")
 	password := cmd.String("password", "", "Credential password")
+	meta := cmd.String("meta", "", "Meta")
 	if err := cmd.Parse(args); err != nil {
 		fmt.Println("Failed to parse arguments")
 		os.Exit(1)
@@ -171,6 +181,7 @@ func saveCredentials(ctx context.Context, cli *client.Client, args []string) {
 	dto := client.CredentialDTO{
 		Login:    *login,
 		Password: *password,
+		Meta:     *meta,
 	}
 	if err := cli.SaveCredential(ctx, dto); err != nil {
 		fmt.Println("Save credential error:", err)
@@ -185,6 +196,7 @@ func saveCard(ctx context.Context, cli *client.Client, args []string) {
 	expiration := cmd.String("exp", "", "Expiration date (MM/YY or MM/YYYY)")
 	cvv := cmd.String("cvv", "", "CVV (3-4 digits)")
 	holder := cmd.String("holder", "", "Card holder name")
+	meta := cmd.String("meta", "", "Meta")
 	if err := cmd.Parse(args); err != nil {
 		fmt.Println("Failed to parse arguments")
 		os.Exit(1)
@@ -198,6 +210,7 @@ func saveCard(ctx context.Context, cli *client.Client, args []string) {
 		ExpirationDate: *expiration,
 		CVV:            *cvv,
 		CardHolderName: *holder,
+		Meta:           *meta,
 	}
 	if err := cli.SaveCard(ctx, dto); err != nil {
 		fmt.Println("Save card error:", err)
@@ -209,6 +222,7 @@ func saveCard(ctx context.Context, cli *client.Client, args []string) {
 func saveFile(ctx context.Context, cli *client.Client, args []string) {
 	cmd := flag.NewFlagSet("save-file", flag.ExitOnError)
 	file := cmd.String("file", "", "Path to file")
+	meta := cmd.String("meta", "", "Meta")
 	if err := cmd.Parse(args); err != nil {
 		fmt.Println("Failed to parse arguments")
 		os.Exit(1)
@@ -219,6 +233,7 @@ func saveFile(ctx context.Context, cli *client.Client, args []string) {
 	}
 	dto := client.FileDTO{
 		FilePath: *file,
+		Meta:     *meta,
 	}
 	if err := cli.SaveFile(ctx, dto); err != nil {
 		fmt.Println("Save file error:", err)
@@ -242,13 +257,14 @@ func getItems(ctx context.Context, cli *client.Client, args []string) {
 	// Создаем tabwriter для красивого вывода таблицы.
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	// Заголовок таблицы.
-	fmt.Fprintln(w, "ID\tType\tUpdated At\tContent")
+	fmt.Fprintln(w, "ID\tType\tUpdated At\tContent\tMeta")
 	for _, item := range data {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			item.ID,
 			item.Type.String(),
 			item.UpdatedAt.Format(time.RFC3339),
 			item.Content,
+			item.Meta,
 		)
 	}
 	if err := w.Flush(); err != nil {
@@ -281,4 +297,8 @@ func sync(ctx context.Context, cli *client.Client, args []string) {
 		os.Exit(1)
 	}
 	fmt.Println("Synchronization completed")
+}
+
+func getVersionInfo() string {
+	return "Version: " + Version + ", Build Date: " + BuildDate
 }

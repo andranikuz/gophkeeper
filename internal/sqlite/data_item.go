@@ -22,6 +22,7 @@ func NewDataItemRepository(db *sql.DB) (*DataItemRepository, error) {
 		id TEXT PRIMARY KEY,
 		type INTEGER,
 		content text,
+		meta text,
 		user_id text,
 		updated_at DATETIME
 	);
@@ -41,8 +42,8 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 		return err
 	}
 	stmt, err := tx.Prepare(`
-	INSERT OR REPLACE INTO data_items (id, type, content, user_id, updated_at)
-	VALUES (?, ?, ?, ?, ?);
+	INSERT OR REPLACE INTO data_items (id, type, content, meta, user_id, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?);
 	`)
 	if err != nil {
 		tx.Rollback()
@@ -51,7 +52,7 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 	defer stmt.Close()
 
 	for _, item := range items {
-		_, err = stmt.Exec(item.ID, int(item.Type), item.Content, item.UserID, item.UpdatedAt.Format(time.RFC3339))
+		_, err = stmt.Exec(item.ID, int(item.Type), item.Content, item.Meta, item.UserID, item.UpdatedAt.Format(time.RFC3339))
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -63,7 +64,7 @@ func (s *DataItemRepository) SaveItems(items []entity.DataItem) error {
 // GetUserItems извлекает все объекты пользователя DataItem из базы.
 func (s *DataItemRepository) GetUserItems(userID string) ([]entity.DataItem, error) {
 	query := `
-	SELECT id, type, content, user_id, updated_at 
+	SELECT id, type, content, meta, user_id, updated_at 
 	FROM data_items
 	WHERE user_id = ?;
 	`
@@ -78,7 +79,7 @@ func (s *DataItemRepository) GetUserItems(userID string) ([]entity.DataItem, err
 		var item entity.DataItem
 		var updatedAtStr string
 		var typeInt int
-		err := rows.Scan(&item.ID, &typeInt, &item.Content, &item.UserID, &updatedAtStr)
+		err := rows.Scan(&item.ID, &typeInt, &item.Content, &item.Meta, &item.UserID, &updatedAtStr)
 		if err != nil {
 			return nil, err
 		}

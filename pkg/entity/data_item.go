@@ -39,16 +39,18 @@ type DataItem struct {
 	ID        string    `json:"id"`         // Уникальный идентификатор данных (например, UUID)
 	Type      DataType  `json:"type"`       // Тип данных
 	Content   string    `json:"content"`    // Содержимое данных (например, зашифрованное)
+	Meta      string    `json:"meta"`       // Произвольная метаинформация
 	UserID    string    `json:"user_id"`    // Владелец записи
 	UpdatedAt time.Time `json:"updated_at"` // Время последнего обновления (используется для синхронизации)
 }
 
 // NewDataItem создаёт новый экземпляр DataItem с заданными параметрами.
-func NewDataItem(id string, dataType DataType, content string, userID string) *DataItem {
+func NewDataItem(id string, dataType DataType, content string, meta string, userID string) *DataItem {
 	return &DataItem{
 		ID:        id,
 		Type:      dataType,
 		Content:   content,
+		Meta:      meta,
 		UserID:    userID,
 		UpdatedAt: time.Now(),
 	}
