@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package filesync;
+
+option go_package = "internal/filesync";
+
+// Представление записи данных.
+message DataItem {
+  string id = 1;
+  int32 type = 2;          // Например, 0 – credential, 1 – text, 2 – binary, 3 – card.
+  string content = 3;      // Для файлов — имя или путь, для прочего — данные.
+  string meta = 4;
+  string updated_at = 5;   // В формате RFC3339.
+}
+
+// Запрос для синхронизации записей (метаданных).
+message SyncRecordsRequest {
+  repeated DataItem items = 1;
+}
+
+// Ответ на запрос синхронизации.
+message SyncRecordsResponse {
+  repeated DataItem upload_list = 1;    // Записи, для которых требуется загрузка файла с клиента на сервер.
+  repeated DataItem download_list = 2;  // Записи, для которых требуется загрузка файла с сервера на клиент.
+  repeated DataItem merged_records = 3; // Объединённый итоговый список записей.
+}
+
+// Сообщение, представляющее чанк файла.
+message FileChunk {
+  string id = 1;           // Идентификатор файла.
+  bytes chunk_data = 2;    // Данные чанка.
+}
+
+// Ответ на загрузку файла.
+message FileUploadResponse {
+  string id = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// Запрос для скачивания файла.
+message FileDownloadRequest {
+  string id = 1;
+}
+
+// Сервис синхронизации файлов.
+service FileSyncService {
+  // Синхронизация метаданных: клиент отправляет записи, сервер возвращает, какие файлы нужно загрузить в обе стороны.
+  rpc SyncRecords(SyncRecordsRequest) returns (SyncRecordsResponse);
+
+  // Загрузка файла: клиент стримит данные (чанки файла) на сервер.
+  rpc UploadFile(stream FileChunk) returns (FileUploadResponse);
+
+  // Скачивание файла: клиент запрашивает файл по ID, сервер стримит файл чанками.
+  rpc DownloadFile(FileDownloadRequest) returns (stream FileChunk);
+}
